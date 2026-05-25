@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Lily — a collection of quiet thoughts. A poetic digital quote book." />
+    <title>Lily</title>
+    <link rel="stylesheet" href="./styles.css" />
+</head>
+
+<body>
+    <script>
+        (function () {
+            try {
+                var raw = localStorage.getItem("lily_reading_state");
+                if (!raw) return;
+                var data = JSON.parse(raw);
+                if (data && data.bookOpen) {
+                    document.documentElement.classList.add("lily-boot--book");
+                    document.body.classList.add("is-book-open");
+                }
+            } catch (e) {
+                /* ignore corrupt storage */
+            }
+        })();
+    </script>
+    <a class="skip-link" href="#book">Skip to reading</a>
+
+    <div id="cover" class="cover" role="region" aria-label="Book cover">
+        <div class="cover__inner">
+            <p class="cover__eyebrow" aria-hidden="true">—</p>
+            <h1 class="cover__title">Lily</h1>
+            <div class="flower__art">
+                <img src="./media/imgs/lily_01.png" alt="Illustration of a lily" width="280" height="280"
+                    class="cover__flower" decoding="async" />
+            </div>
+            <button type="button" class="cover__cta btn" id="open-book" aria-controls="book">
+                Open
+            </button>
+            <p class="cover__eyebrow" aria-hidden="true">—</p>
+        </div>
+    </div>
+
+    <div id="book-shell" class="book-shell book-shell--hidden" role="region" aria-label="Quote book" aria-hidden="true">
+        <main id="book" class="book" tabindex="-1">
+            <!-- quote pages injected by script -->
+        </main>
+
+        <header class="book-bar" role="banner">
+            <p class="book-bar__brand">Lily</p>
+            <div class="book-bar__progress" aria-live="polite" aria-atomic="true">
+                <span class="visually-hidden">Reading position: </span>
+                <span id="page-indicator"><span id="current-page">1</span> / <span id="total-pages">1</span></span>
+            </div>
+            <button type="button" class="book-bar__cover btn btn--ghost" id="to-cover" aria-label="Return to cover">
+                Close
+            </button>
+        </header>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" aria-relevant="additions text"></div>
+
+    <script src="./jquery.min.js"></script>
+    <script src="./script.js"></script>
+</body>
+
+</html>
