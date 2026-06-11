@@ -2,67 +2,56 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Lily — a collection of quiet thoughts. A poetic digital quote book." />
-    <title>Lily</title>
-    <link rel="stylesheet" href="./styles.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A little note for Lily." />
+    <title>Sorry, Lily</title>
+    <link rel="stylesheet" href="./sorry.css" />
 </head>
 
 <body>
-    <script>
-        (function () {
-            try {
-                var raw = localStorage.getItem("lily_reading_state");
-                if (!raw) return;
-                var data = JSON.parse(raw);
-                if (data && data.bookOpen) {
-                    document.documentElement.classList.add("lily-boot--book");
-                    document.body.classList.add("is-book-open");
-                }
-            } catch (e) {
-                /* ignore corrupt storage */
-            }
-        })();
-    </script>
-    <a class="skip-link" href="#book">Skip to reading</a>
+    <div class="petals" aria-hidden="true">
+        <span class="petal"></span>
+        <span class="petal"></span>
+        <span class="petal"></span>
+        <span class="petal"></span>
+        <span class="petal"></span>
+        <span class="petal"></span>
+        <span class="petal"></span>
+        <span class="petal"></span>
+    </div>
 
-    <div id="cover" class="cover" role="region" aria-label="Book cover">
-        <div class="cover__inner">
-            <p class="cover__eyebrow" aria-hidden="true">—</p>
-            <h1 class="cover__title">Lily</h1>
-            <div class="flower__art">
-                <img src="./media/imgs/lily_01.png" alt="Illustration of a lily" width="280" height="280"
-                    class="cover__flower" decoding="async" />
-            </div>
-            <button type="button" class="cover__cta btn" id="open-book" aria-controls="book">
-                Open
-            </button>
-            <p class="cover__eyebrow" aria-hidden="true">—</p>
+    <main class="card">
+        <div class="lily" aria-hidden="true">
+            <div class="lily__petal lily__petal--1"></div>
+            <div class="lily__petal lily__petal--2"></div>
+            <div class="lily__petal lily__petal--3"></div>
+            <div class="lily__petal lily__petal--4"></div>
+            <div class="lily__petal lily__petal--5"></div>
+            <div class="lily__petal lily__petal--6"></div>
+            <div class="lily__center"></div>
+            <div class="lily__stem"></div>
+            <div class="lily__leaf lily__leaf--left"></div>
+            <div class="lily__leaf lily__leaf--right"></div>
         </div>
-    </div>
 
-    <div id="book-shell" class="book-shell book-shell--hidden" role="region" aria-label="Quote book" aria-hidden="true">
-        <main id="book" class="book" tabindex="-1">
-            <!-- quote pages injected by script -->
-        </main>
+        <p class="eyebrow">for you, always</p>
+        <h1 class="title">Sorry, Lily</h1>
 
-        <header class="book-bar" role="banner">
-            <p class="book-bar__brand">Lily</p>
-            <div class="book-bar__progress" aria-live="polite" aria-atomic="true">
-                <span class="visually-hidden">Reading position: </span>
-                <span id="page-indicator"><span id="current-page">1</span> / <span id="total-pages">1</span></span>
-            </div>
-            <button type="button" class="book-bar__cover btn btn--ghost" id="to-cover" aria-label="Return to cover">
-                Close
-            </button>
-        </header>
-    </div>
+        <!-- <p class="message">
+            I didn't mean to hurt your heart.<br />
+            You matter more than I ever let on,<br />
+            and I'm truly sorry.
+        </p> -->
 
-    <div id="toast" class="toast" role="status" aria-live="polite" aria-relevant="additions text"></div>
+        <div class="hearts" aria-hidden="true">
+            <span class="heart">♡</span>
+            <span class="heart heart--mid">♡</span>
+            <span class="heart">♡</span>
+        </div>
 
-    <script src="./jquery.min.js"></script>
-    <script src="./script.js"></script>
+        <p class="sign-off">— with all my heart</p>
+    </main>
 </body>
 
 </html>
