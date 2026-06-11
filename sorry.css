@@ -260,8 +260,7 @@ body {
 
 .lily__center {
   position: absolute;
-  top: 50%;
-  transform: translateY(-60%);
+  top: 50px;
   left: 50%;
   width: 22px;
   height: 22px;
