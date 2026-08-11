@@ -410,8 +410,34 @@
         }, 2200);
     }
 
+    function spawnFallingPetals() {
+        const root = document.getElementById("sky-petals");
+        if (!root || root.childElementCount) return;
+
+        const petalCount = 16;
+        const frag = document.createDocumentFragment();
+
+        for (let i = 0; i < petalCount; i += 1) {
+            const petal = document.createElement("span");
+            const size = 8 + Math.random() * 10;
+            petal.className = Math.random() > 0.55 ? "petal petal--soft" : "petal";
+            petal.style.left = `${Math.random() * 100}%`;
+            petal.style.setProperty("--petal-w", `${size}px`);
+            petal.style.setProperty("--petal-h", `${size * 1.35}px`);
+            petal.style.setProperty("--petal-opacity", String(0.4 + Math.random() * 0.35));
+            petal.style.setProperty("--fall", `${8 + Math.random() * 10}s`);
+            petal.style.setProperty("--drift-x", `${-50 + Math.random() * 100}px`);
+            petal.style.setProperty("--rot", `${Math.random() * 80}deg`);
+            petal.style.animationDelay = `${Math.random() * 9}s`;
+            frag.appendChild(petal);
+        }
+
+        root.appendChild(frag);
+    }
+
     function init() {
         const stored = readStoredState();
+        spawnFallingPetals();
 
         $.when(loadQuotes())
             .done(function (data) {
