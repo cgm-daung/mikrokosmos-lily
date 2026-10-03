@@ -51,9 +51,23 @@
 
         <header class="book-bar" role="banner">
             <p class="book-bar__brand">Lily</p>
-            <div class="book-bar__progress" aria-live="polite" aria-atomic="true">
-                <span class="visually-hidden">Reading position: </span>
-                <span id="page-indicator"><span id="current-page">1</span> / <span id="total-pages">1</span></span>
+            <div class="book-bar__progress-wrap">
+                <button type="button" class="book-bar__progress" id="scrubber-toggle"
+                    aria-expanded="false" aria-controls="quote-scrubber" aria-label="Open quote index">
+                    <span class="visually-hidden">Reading position: </span>
+                    <span id="page-indicator"><span id="current-page">1</span> / <span id="total-pages">1</span></span>
+                </button>
+
+                <div class="quote-scrubber" id="quote-scrubber" hidden>
+                    <div class="quote-scrubber__chip" id="scrubber-chip" aria-live="polite" hidden>
+                        <span class="quote-scrubber__chip-num" id="scrubber-chip-num"></span>
+                        <span class="quote-scrubber__chip-peek" id="scrubber-chip-peek"></span>
+                    </div>
+                    <div class="quote-scrubber__arc" id="scrubber-track" role="listbox"
+                        aria-label="Jump to quote">
+                        <!-- ticks injected by script -->
+                    </div>
+                </div>
             </div>
             <button type="button" class="book-bar__cover btn btn--ghost" id="to-cover" aria-label="Return to cover">
                 Close

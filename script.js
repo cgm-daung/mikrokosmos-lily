@@ -23,6 +23,7 @@
     let pendingScrollTop = null;
     let intersectionObserver = null;
     let currentPageIndex = 0;
+    let scrubberOpen = false;
 
     function readStoredState() {
         try {
@@ -143,7 +144,172 @@
         });
 
         $("#total-pages").text(String(list.length));
+        buildScrubber(list.length);
         updateCurrentPage(0);
+    }
+
+    function quotePeek(quote) {
+        if (!quote) return "";
+        const title = quote.title != null ? String(quote.title).trim() : "";
+        if (title) return title;
+        const content = quote.content != null ? String(quote.content).trim() : "";
+        const first = content.split("\n")[0] || "";
+        if (first.length > 32) return first.slice(0, 32) + "…";
+        return first;
+    }
+
+    function buildScrubber(total) {
+        const track = document.getElementById("scrubber-track");
+        if (!track) return;
+
+        track.innerHTML = "";
+        const frag = document.createDocumentFragment();
+        for (let i = 0; i < total; i += 1) {
+            const tick = document.createElement("button");
+            tick.type = "button";
+            tick.className = "quote-scrubber__tick";
+            tick.setAttribute("data-index", String(i));
+            tick.setAttribute("role", "option");
+            tick.setAttribute("aria-label", "Quote " + (i + 1));
+            tick.style.setProperty("--tick-delay", Math.min(i * 12, 280) + "ms");
+            frag.appendChild(tick);
+        }
+        track.appendChild(frag);
+        layoutScrubberArc();
+        syncScrubberActive(currentPageIndex);
+    }
+
+    function layoutScrubberArc() {
+        const track = document.getElementById("scrubber-track");
+        if (!track) return;
+        const ticks = track.querySelectorAll(".quote-scrubber__tick");
+        const n = ticks.length;
+        if (!n) return;
+
+        const w = track.clientWidth || 1;
+        const h = track.clientHeight || 1;
+        const cx = w / 2;
+        const cy = h * 0.92;
+        const radius = Math.min(w * 0.46, h * 0.86);
+
+        for (let i = 0; i < n; i += 1) {
+            const t = n === 1 ? 0.5 : i / (n - 1);
+            // semicircle rising upward: π (left) → 0 (right)
+            const theta = Math.PI - t * Math.PI;
+            const x = cx + radius * Math.cos(theta);
+            const y = cy - radius * Math.sin(theta);
+            ticks[i].style.left = x + "px";
+            ticks[i].style.top = y + "px";
+        }
+    }
+
+    function syncScrubberActive(index) {
+        const track = document.getElementById("scrubber-track");
+        if (!track) return;
+        const total = quotes.length;
+        const clamped = Math.max(0, Math.min(Math.max(total - 1, 0), index));
+        const ticks = track.querySelectorAll(".quote-scrubber__tick");
+        for (let i = 0; i < ticks.length; i += 1) {
+            const on = i === clamped;
+            ticks[i].classList.toggle("is-active", on);
+            ticks[i].setAttribute("aria-selected", on ? "true" : "false");
+        }
+    }
+
+    function showScrubberChip(index) {
+        const chip = document.getElementById("scrubber-chip");
+        const num = document.getElementById("scrubber-chip-num");
+        const peek = document.getElementById("scrubber-chip-peek");
+        if (!chip || !num || !peek) return;
+        const total = Math.max(quotes.length, 1);
+        const clamped = Math.max(0, Math.min(total - 1, index));
+        num.textContent = clamped + 1 + " / " + total;
+        peek.textContent = quotePeek(quotes[clamped]);
+        chip.removeAttribute("hidden");
+        chip.classList.add("is-visible");
+    }
+
+    function hideScrubberChip() {
+        const chip = document.getElementById("scrubber-chip");
+        if (!chip) return;
+        chip.classList.remove("is-visible");
+        chip.setAttribute("hidden", "");
+    }
+
+    function setScrubberOpen(open) {
+        const scrubber = document.getElementById("quote-scrubber");
+        const toggle = document.getElementById("scrubber-toggle");
+        if (!scrubber || !toggle) return;
+
+        scrubberOpen = Boolean(open);
+        scrubber.classList.toggle("is-open", scrubberOpen);
+        toggle.setAttribute("aria-expanded", scrubberOpen ? "true" : "false");
+        toggle.setAttribute(
+            "aria-label",
+            scrubberOpen ? "Close quote index" : "Open quote index"
+        );
+
+        if (scrubberOpen) {
+            scrubber.removeAttribute("hidden");
+            layoutScrubberArc();
+            syncScrubberActive(currentPageIndex);
+            showScrubberChip(currentPageIndex);
+        } else {
+            hideScrubberChip();
+            scrubber.setAttribute("hidden", "");
+        }
+    }
+
+    function bindScrubber() {
+        const toggle = document.getElementById("scrubber-toggle");
+        const scrubber = document.getElementById("quote-scrubber");
+        const track = document.getElementById("scrubber-track");
+        if (!toggle || !scrubber || !track || toggle.dataset.bound === "1") return;
+        toggle.dataset.bound = "1";
+
+        toggle.addEventListener("click", function (e) {
+            e.stopPropagation();
+            if (!quotes.length) return;
+            setScrubberOpen(!scrubberOpen);
+        });
+
+        track.addEventListener("click", function (e) {
+            const tick = e.target.closest(".quote-scrubber__tick");
+            if (!tick) return;
+            const idx = parseInt(tick.getAttribute("data-index"), 10);
+            if (Number.isNaN(idx)) return;
+            scrollToPageIndex(idx, true);
+            showScrubberChip(idx);
+            setScrubberOpen(false);
+        });
+
+        track.addEventListener("pointerover", function (e) {
+            const tick = e.target.closest(".quote-scrubber__tick");
+            if (!tick || !scrubberOpen) return;
+            const idx = parseInt(tick.getAttribute("data-index"), 10);
+            if (!Number.isNaN(idx)) showScrubberChip(idx);
+        });
+
+        document.addEventListener("click", function (e) {
+            if (!scrubberOpen) return;
+            if (e.target.closest("#quote-scrubber") || e.target.closest("#scrubber-toggle")) return;
+            setScrubberOpen(false);
+        });
+
+        document.addEventListener("keydown", function (e) {
+            if (!scrubberOpen) return;
+            if (e.key === "Escape") {
+                setScrubberOpen(false);
+                toggle.focus();
+            }
+        });
+
+        $(window).on(
+            "resize.lilyScrubber",
+            debounce(function () {
+                if (scrubberOpen) layoutScrubberArc();
+            }, 120)
+        );
     }
 
     function updateCurrentPage(index) {
@@ -153,6 +319,8 @@
         currentPageIndex = clamped;
         $("#current-page").text(String(clamped + 1));
         $("#total-pages").text(String(total));
+        syncScrubberActive(clamped);
+        if (scrubberOpen) showScrubberChip(clamped);
     }
 
     function getPageElements() {
@@ -340,6 +508,7 @@
 
     function closeBookToCover() {
         const $b = $book();
+        setScrubberOpen(false);
         writeStoredState({
             bookOpen: false,
             scrollTop: $b.length ? $b.prop("scrollTop") : 0,
@@ -453,6 +622,7 @@
                 handleScrollTracking();
                 setupIntersectionTracking();
                 bindKeyboardNavigation();
+                bindScrubber();
 
                 if (stored && stored.bookOpen) {
                     openBook({ withTransitionFocus: false });

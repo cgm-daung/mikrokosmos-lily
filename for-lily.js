@@ -19,16 +19,22 @@
     const quoteBody = document.getElementById("quote-body");
     const quoteAuthor = document.getElementById("quote-author");
     const pageCount = document.getElementById("page-count");
-    const progressFill = document.getElementById("progress-fill");
     const swipeHint = document.getElementById("swipe-hint");
     const starsRoot = document.getElementById("sky-stars");
     const petalsRoot = document.getElementById("sky-petals");
     const quoteStage = document.getElementById("quote-stage");
+    const scrubber = document.getElementById("quote-scrubber");
+    const scrubberTrack = document.getElementById("scrubber-track");
+    const scrubberChip = document.getElementById("scrubber-chip");
+    const scrubberChipNum = document.getElementById("scrubber-chip-num");
+    const scrubberChipPeek = document.getElementById("scrubber-chip-peek");
+    const scrubberToggle = document.getElementById("scrubber-toggle");
 
     let quotes = [];
     let index = 0;
     let animating = false;
     let hintTimer = null;
+    let scrubberOpen = false;
 
     function readState() {
         try {
@@ -48,8 +54,8 @@
                 typeof partial.index === "number" && !Number.isNaN(partial.index)
                     ? partial.index
                     : typeof prev.index === "number"
-                      ? prev.index
-                      : 0,
+                        ? prev.index
+                        : 0,
         };
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
@@ -131,12 +137,12 @@
             }
 
             pageCount.textContent = `${index + 1} / ${quotes.length}`;
-            const pct = quotes.length <= 1 ? 100 : ((index + 1) / quotes.length) * 100;
-            progressFill.style.width = `${pct}%`;
 
             prevBtn.disabled = index <= 0;
             nextBtn.disabled = index >= quotes.length - 1;
 
+            syncScrubberActive(index);
+            if (scrubberOpen) showScrubberChip(index);
             writeState({ open: true, index });
         };
 
@@ -171,10 +177,121 @@
         }, 220);
     }
 
-    function goTo(nextIndex, direction) {
-        if (animating || !quotes.length) return;
+    function quotePeek(quote) {
+        if (!quote) return "";
+        const title = (quote.title || "").trim();
+        if (title) return title;
+        const content = (quote.content || "").trim();
+        const first = content.split("\n")[0] || "";
+        if (first.length > 32) return first.slice(0, 32) + "…";
+        return first;
+    }
+
+    function buildScrubber(total) {
+        if (!scrubberTrack) return;
+        scrubberTrack.innerHTML = "";
+        const frag = document.createDocumentFragment();
+        for (let i = 0; i < total; i += 1) {
+            const tick = document.createElement("button");
+            tick.type = "button";
+            tick.className = "quote-scrubber__tick";
+            tick.setAttribute("data-index", String(i));
+            tick.setAttribute("role", "option");
+            tick.setAttribute("aria-label", "Quote " + (i + 1));
+            tick.style.setProperty("--tick-delay", Math.min(i * 12, 280) + "ms");
+            frag.appendChild(tick);
+        }
+        scrubberTrack.appendChild(frag);
+        layoutScrubberArc();
+        syncScrubberActive(index);
+    }
+
+    function layoutScrubberArc() {
+        if (!scrubberTrack) return;
+        const ticks = scrubberTrack.querySelectorAll(".quote-scrubber__tick");
+        const n = ticks.length;
+        if (!n) return;
+
+        const w = scrubberTrack.clientWidth || 1;
+        const h = scrubberTrack.clientHeight || 1;
+        const cx = w / 2;
+        const cy = h * 0.92;
+        const radius = Math.min(w * 0.46, h * 0.86);
+
+        for (let i = 0; i < n; i += 1) {
+            const t = n === 1 ? 0.5 : i / (n - 1);
+            const theta = Math.PI - t * Math.PI;
+            const x = cx + radius * Math.cos(theta);
+            const y = cy - radius * Math.sin(theta);
+            ticks[i].style.left = x + "px";
+            ticks[i].style.top = y + "px";
+        }
+    }
+
+    function syncScrubberActive(activeIndex) {
+        if (!scrubberTrack) return;
+        const total = quotes.length;
+        const clamped = Math.max(0, Math.min(Math.max(total - 1, 0), activeIndex));
+        const ticks = scrubberTrack.querySelectorAll(".quote-scrubber__tick");
+        for (let i = 0; i < ticks.length; i += 1) {
+            const on = i === clamped;
+            ticks[i].classList.toggle("is-active", on);
+            ticks[i].setAttribute("aria-selected", on ? "true" : "false");
+        }
+    }
+
+    function showScrubberChip(activeIndex) {
+        if (!scrubberChip || !scrubberChipNum || !scrubberChipPeek) return;
+        const total = Math.max(quotes.length, 1);
+        const clamped = Math.max(0, Math.min(total - 1, activeIndex));
+        scrubberChipNum.textContent = clamped + 1 + " / " + total;
+        scrubberChipPeek.textContent = quotePeek(quotes[clamped]);
+        scrubberChip.removeAttribute("hidden");
+        scrubberChip.classList.add("is-visible");
+    }
+
+    function hideScrubberChip() {
+        if (!scrubberChip) return;
+        scrubberChip.classList.remove("is-visible");
+        scrubberChip.setAttribute("hidden", "");
+    }
+
+    function setScrubberOpen(open) {
+        if (!scrubber || !scrubberToggle) return;
+        scrubberOpen = Boolean(open);
+        scrubber.classList.toggle("is-open", scrubberOpen);
+        scrubberToggle.setAttribute("aria-expanded", scrubberOpen ? "true" : "false");
+        scrubberToggle.setAttribute(
+            "aria-label",
+            scrubberOpen ? "Close quote index" : "Open quote index"
+        );
+
+        if (scrubberOpen) {
+            scrubber.removeAttribute("hidden");
+            layoutScrubberArc();
+            syncScrubberActive(index);
+            showScrubberChip(index);
+        } else {
+            hideScrubberChip();
+            scrubber.setAttribute("hidden", "");
+        }
+    }
+
+    function goTo(nextIndex, direction, options) {
+        options = options || {};
+        if (!quotes.length) return;
         if (nextIndex < 0 || nextIndex >= quotes.length) return;
-        if (nextIndex === index && direction) return;
+        if (nextIndex === index && direction && !options.force) return;
+
+        if (options.instant) {
+            animating = false;
+            index = nextIndex;
+            renderQuote(null);
+            hideHintSoon();
+            return;
+        }
+
+        if (animating) return;
         index = nextIndex;
         renderQuote(direction);
         hideHintSoon();
@@ -186,6 +303,47 @@
 
     function prev() {
         goTo(index - 1, "prev");
+    }
+
+    function bindScrubber() {
+        if (!scrubberToggle || !scrubber || !scrubberTrack || scrubberToggle.dataset.bound === "1") {
+            return;
+        }
+        scrubberToggle.dataset.bound = "1";
+
+        scrubberToggle.addEventListener("click", function (e) {
+            e.stopPropagation();
+            if (!quotes.length) return;
+            setScrubberOpen(!scrubberOpen);
+        });
+
+        scrubberTrack.addEventListener("click", function (e) {
+            const tick = e.target.closest(".quote-scrubber__tick");
+            if (!tick) return;
+            const idx = parseInt(tick.getAttribute("data-index"), 10);
+            if (Number.isNaN(idx)) return;
+            const direction = idx > index ? "next" : idx < index ? "prev" : null;
+            goTo(idx, direction, { instant: Math.abs(idx - index) > 1, force: true });
+            showScrubberChip(idx);
+            setScrubberOpen(false);
+        });
+
+        scrubberTrack.addEventListener("pointerover", function (e) {
+            const tick = e.target.closest(".quote-scrubber__tick");
+            if (!tick || !scrubberOpen) return;
+            const idx = parseInt(tick.getAttribute("data-index"), 10);
+            if (!Number.isNaN(idx)) showScrubberChip(idx);
+        });
+
+        document.addEventListener("click", function (e) {
+            if (!scrubberOpen) return;
+            if (e.target.closest("#quote-scrubber") || e.target.closest("#scrubber-toggle")) return;
+            setScrubberOpen(false);
+        });
+
+        window.addEventListener("resize", function () {
+            if (scrubberOpen) layoutScrubberArc();
+        });
     }
 
     function openReader() {
@@ -205,6 +363,7 @@
     }
 
     function showCover() {
+        setScrubberOpen(false);
         reader.classList.add("is-hidden");
         reader.hidden = true;
         cover.hidden = false;
@@ -266,6 +425,7 @@
         backBtn.addEventListener("click", showCover);
         prevBtn.addEventListener("click", prev);
         nextBtn.addEventListener("click", next);
+        bindScrubber();
 
         document.addEventListener("keydown", (e) => {
             if (reader.hidden) {
@@ -282,6 +442,11 @@
                 e.preventDefault();
                 prev();
             } else if (e.key === "Escape") {
+                if (scrubberOpen) {
+                    e.preventDefault();
+                    setScrubberOpen(false);
+                    return;
+                }
                 showCover();
             }
         });
@@ -301,6 +466,8 @@
             return;
         }
 
+        buildScrubber(quotes.length);
+
         const saved = readState();
         if (saved && typeof saved.index === "number") {
             index = Math.min(Math.max(0, saved.index), quotes.length - 1);
@@ -313,6 +480,8 @@
             reader.classList.remove("is-hidden");
             renderQuote(null);
             swipeHint.classList.add("is-gone");
+        } else {
+            syncScrubberActive(index);
         }
     }
 

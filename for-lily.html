@@ -65,7 +65,7 @@
                 <span aria-hidden="true">←</span>
             </button>
             <p class="reader__mark">for Lily</p>
-            <p class="reader__count" id="page-count" aria-live="polite">1 / 1</p>
+            <span class="reader__top-spacer" aria-hidden="true"></span>
         </header>
 
         <div class="reader__stage" id="quote-stage">
@@ -80,15 +80,27 @@
             <button type="button" class="nav-btn" id="prev-btn" aria-label="Previous quote">
                 Prev
             </button>
-            <div class="reader__dots" id="progress-track" aria-hidden="true">
-                <span class="reader__progress" id="progress-fill"></span>
+            <div class="reader__progress-wrap">
+                <button type="button" class="reader__count-btn" id="scrubber-toggle"
+                    aria-expanded="false" aria-controls="quote-scrubber" aria-label="Open quote index">
+                    <span id="page-count" aria-live="polite">1 / 1</span>
+                </button>
+
+                <div class="quote-scrubber" id="quote-scrubber" hidden>
+                    <div class="quote-scrubber__chip" id="scrubber-chip" aria-live="polite" hidden>
+                        <span class="quote-scrubber__chip-num" id="scrubber-chip-num"></span>
+                        <span class="quote-scrubber__chip-peek" id="scrubber-chip-peek"></span>
+                    </div>
+                    <div class="quote-scrubber__arc" id="scrubber-track" role="listbox" aria-label="Jump to quote">
+                    </div>
+                </div>
             </div>
             <button type="button" class="nav-btn nav-btn--primary" id="next-btn" aria-label="Next quote">
                 Next
             </button>
         </nav>
 
-        <p class="reader__hint" id="swipe-hint">swipe or tap next</p>
+        <p class="reader__hint" id="swipe-hint">swipe, or tap the page count</p>
     </section>
 
     <script src="./for-lily.js" defer></script>
