@@ -348,10 +348,40 @@ html.lily-boot--book .book-shell.book-shell--hidden {
   letter-spacing: 0.12em;
 }
 
+.book-bar__progress-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+}
+
 .book-bar__progress {
   font-size: 0.95rem;
   text-align: center;
-  flex: 1;
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.35);
+  color: inherit;
+  font-family: inherit;
+  padding: 0.35rem 0.85rem;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.book-bar__progress:hover,
+.book-bar__progress:focus-visible {
+  background: rgba(255, 255, 255, 0.55);
+  border-color: color-mix(in srgb, var(--accent-deep) 28%, transparent);
+  outline: none;
+}
+
+.book-bar__progress[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: color-mix(in srgb, var(--accent-deep) 35%, transparent);
+  color: var(--rose);
 }
 
 #current-page {
@@ -412,13 +442,14 @@ html.lily-boot--book .book-shell.book-shell--hidden {
     0 1px 0 rgba(255, 255, 255, 0.65),
     0 20px 44px var(--shadow),
     0 4px 12px rgba(180, 90, 120, 0.06);
-  background:
+  /* background:
     linear-gradient(
       165deg,
       rgba(255, 252, 253, 0.94) 0%,
       rgba(255, 232, 240, 0.9) 48%,
       rgba(232, 244, 248, 0.88) 100%
-    );
+    ); */
+    background: transparent;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   margin-inline: auto;
@@ -591,6 +622,156 @@ h1,
   opacity: 0.95;
 }
 
+/* BOTTOM ARC SCRUBBER — fan above progress */
+.quote-scrubber {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 0.35rem);
+  transform: translateX(-50%);
+  z-index: 20;
+  width: min(92vw, 22rem);
+  height: min(42vw, 11rem);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.22s ease, visibility 0.22s ease;
+}
+
+.quote-scrubber.is-open {
+  pointer-events: auto;
+  opacity: 1;
+  visibility: visible;
+}
+
+.quote-scrubber[hidden] {
+  display: block !important;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.quote-scrubber.is-open[hidden] {
+  pointer-events: auto;
+  opacity: 1;
+  visibility: visible;
+}
+
+.quote-scrubber__arc {
+  position: absolute;
+  inset: 0;
+}
+
+.quote-scrubber__tick {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transform: translate(-50%, -50%) scale(0.55);
+  opacity: 0;
+  transition:
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.22s ease,
+    background 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.quote-scrubber.is-open .quote-scrubber__tick {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  transition-delay: var(--tick-delay, 0ms);
+}
+
+.quote-scrubber__tick::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent-deep) 45%, white);
+  box-shadow: 0 1px 4px rgba(180, 90, 120, 0.18);
+  transition: width 0.15s ease, height 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.quote-scrubber__tick:hover::before,
+.quote-scrubber__tick:focus-visible::before {
+  width: 11px;
+  height: 11px;
+  background: var(--accent-deep);
+}
+
+.quote-scrubber__tick.is-active::before {
+  width: 12px;
+  height: 12px;
+  background: var(--rose);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.quote-scrubber__tick:focus-visible {
+  outline: none;
+}
+
+.quote-scrubber__chip {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translateX(-50%);
+  max-width: min(70vw, 16rem);
+  padding: 0.4rem 0.7rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  background: rgba(255, 248, 251, 0.94);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 10px 28px var(--shadow);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.18s ease, visibility 0.18s ease;
+  text-align: center;
+  z-index: 2;
+}
+
+.quote-scrubber__chip.is-visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.quote-scrubber__chip[hidden] {
+  display: block !important;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.quote-scrubber__chip.is-visible[hidden] {
+  opacity: 1;
+  visibility: visible;
+}
+
+.quote-scrubber__chip-num {
+  display: block;
+  font-family: var(--serif);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--rose);
+}
+
+.quote-scrubber__chip-peek {
+  display: block;
+  margin-top: 0.12rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* RESPONSIVE */
 @media (max-width: 480px) {
   .book-bar {
@@ -611,6 +792,11 @@ h1,
   .quote-card {
     padding: 0.35rem 1.3rem 1.25rem;
   }
+
+  .quote-scrubber {
+    width: min(96vw, 20rem);
+    height: min(46vw, 10rem);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -626,5 +812,12 @@ h1,
   .cover__flower,
   .sky-petals .petal {
     animation: none;
+  }
+
+  .quote-scrubber__tick,
+  .quote-scrubber__chip,
+  .quote-scrubber {
+    transition: none !important;
+    transition-delay: 0ms !important;
   }
 }
